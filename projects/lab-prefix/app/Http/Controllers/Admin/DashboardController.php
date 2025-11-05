@@ -9,6 +9,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        return view('admin.dashboard',['message'=>'Welcome to Admin Dashboard']);
+        return view('admin.dashboard',
+        ['message'=>'Welcome to Admin Dashboard']);
     }
 }

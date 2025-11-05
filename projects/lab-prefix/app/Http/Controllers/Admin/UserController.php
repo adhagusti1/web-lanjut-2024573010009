@@ -8,7 +8,7 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = ['Ria', 'Lie', 'Jon'];
+        $users = ['Adha', 'Ridha', 'PB'];
         return view('admin.users.index', compact('users'));
     }
 

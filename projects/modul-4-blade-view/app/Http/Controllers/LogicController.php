@@ -25,3 +25,4 @@ class LogicController extends Controller
 }
 
 }
+

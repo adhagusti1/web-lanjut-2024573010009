@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 
 class Formcontroller extends Controller
@@ -10,7 +8,6 @@ class Formcontroller extends Controller
     {
         return view('form');
     }
-
     public function handleForm(Request $request)
     {
         $validated = $request->validate([
@@ -26,7 +23,6 @@ class Formcontroller extends Controller
 
         return redirect()->route('form.result')->with('data', $validated);
     }
-
     public function showResult()
     {
         $data = session('data');

@@ -9,17 +9,19 @@
 
 ## Abstrak
 
-Laporan ini menjelaskan hasil praktikum pada Modul 6: *Model dan Laravel Eloquent* dalam mata kuliah Workshop Web Lanjut. Fokus praktikum adalah memahami bagaimana Laravel memetakan data ke dalam model, bagaimana Eloquent ORM bekerja untuk operasi CRUD, serta bagaimana pola-pola pendukung seperti DTO dan Repository dapat dipakai untuk merapikan kode. Praktikum dibagi menjadi tiga: (1) binding form ke model sederhana tanpa database, (2) penggunaan Data Transfer Object (DTO) dan service layer, dan (3) membangun aplikasi Todo CRUD menggunakan Eloquent dan MySQL. Melalui percobaan ini mahasiswa diharapkan mampu menghubungkan teori MVC dengan implementasi Laravel yang riil, khususnya pada sisi *Model* dan interaksinya dengan database.
+Laporan ini menjelaskan hasil praktikum pada Modul 6: _Model dan Laravel Eloquent_ dalam mata kuliah Workshop Web Lanjut. Fokus praktikum adalah memahami bagaimana Laravel memetakan data ke dalam model, bagaimana Eloquent ORM bekerja untuk operasi CRUD, serta bagaimana pola-pola pendukung seperti DTO dan Repository dapat dipakai untuk merapikan kode. Praktikum dibagi menjadi tiga: (1) binding form ke model sederhana tanpa database, (2) penggunaan Data Transfer Object (DTO) dan service layer, dan (3) membangun aplikasi Todo CRUD menggunakan Eloquent dan MySQL. Melalui percobaan ini mahasiswa diharapkan mampu menghubungkan teori MVC dengan implementasi Laravel yang riil, khususnya pada sisi _Model_ dan interaksinya dengan database.
 
 ---
 
 ## 1. Dasar Teori
 
 ### 1.1 Model dalam Laravel
+
 Dalam arsitektur MVC, **Model** adalah bagian yang mewakili data dan aturan bisnis. Di Laravel, model biasanya berada di folder `app/Models` dan secara default akan terhubung ke tabel yang namanya jamak dari nama model — misalnya model `Product` ke tabel `products`. Model inilah yang berkomunikasi dengan database menggunakan **Eloquent ORM** sehingga kita tidak perlu menulis query SQL mentah setiap kali ingin mengambil atau menyimpan data.
 
 ### 1.2 Eloquent ORM
-**Eloquent** adalah ORM bawaan Laravel yang menyediakan cara berinteraksi dengan database secara *object-oriented*. Setiap baris pada tabel direpresentasikan sebagai objek model. Operasi umum seperti `all()`, `find()`, `create()`, `update()`, dan `delete()` sudah disediakan sehingga kode jadi lebih singkat dan mudah dibaca.
+
+**Eloquent** adalah ORM bawaan Laravel yang menyediakan cara berinteraksi dengan database secara _object-oriented_. Setiap baris pada tabel direpresentasikan sebagai objek model. Operasi umum seperti `all()`, `find()`, `create()`, `update()`, dan `delete()` sudah disediakan sehingga kode jadi lebih singkat dan mudah dibaca.
 Contoh model sederhana:
 
 ```php
@@ -33,28 +35,34 @@ class Product extends Model
 }
 ```
 
-Properti `$fillable` digunakan agar field tersebut boleh di-*mass assign* saat pemanggilan `Product::create([...])`.
+Properti `$fillable` digunakan agar field tersebut boleh di-_mass assign_ saat pemanggilan `Product::create([...])`.
 
 ### 1.3 POCO / ViewModel
+
 Sebelum masuk ke database, kadang kita hanya butuh “wadah data” dari form. Pada praktikum pertama, kita memakai kelas PHP biasa (gaya **POCO / ViewModel**) untuk menampung data produk tanpa menyimpannya ke database. Ini berguna kalau kita ingin latihan alur request → controller → view tapi database belum disiapkan.
 
 ### 1.4 Data Transfer Object (DTO)
+
 **DTO** dipakai untuk memindahkan data dari lapisan request ke lapisan service atau ke controller lain dalam bentuk yang sudah rapi. Keuntungan memakai DTO:
+
 - data yang masuk lebih terkontrol,
 - memisahkan data mentah dari logika bisnis,
 - kode controller jadi lebih pendek.
 
 ### 1.5 Repository Pattern (sekilas)
+
 Repository dipakai untuk mengabstraksi akses data. Di Laravel, ini cocok kalau nanti aplikasi mulai besar dan kita ingin ganti sumber data (MySQL → API, dsb.) tanpa mengubah controller.
 
 ### 1.6 Migrasi, Seeder, dan Eloquent
+
 Untuk praktikum Todo, kita sudah mulai pakai fitur database Laravel:
+
 - **Migration** → membuat struktur tabel dengan kode
 - **Seeder** → mengisi data awal
 - **Model Eloquent** → mengakses tabel memakai class
 - **Controller** → memanggil model dan melempar ke view
 
-Dengan cara ini, alur *Model layer* Laravel bisa dilihat utuh dari atas ke bawah.
+Dengan cara ini, alur _Model layer_ Laravel bisa dilihat utuh dari atas ke bawah.
 
 ---
 
@@ -66,128 +74,33 @@ Dengan cara ini, alur *Model layer* Laravel bisa dilihat utuh dari atas ke bawah
 
 **Langkah-langkah:**
 
-1. **Buat proyek baru** (opsional kalau gabung dengan modul sebelumnya):
+1. Buat proyek baru:  
+   ![gambar1](./gambar/gambar1.png)
 
-   ```bash
-   laravel new model-app
-   cd model-app
-   ```
+2. Buat ViewModel: `app/ViewModels/ProductViewModel.php` (kode di laporan utama).  
+   ![gambar2](./gambar/gambar2.png)
 
-2. **Buat ViewModel** untuk menampung data produk: `app/ViewModels/ProductViewModel.php`
+3. Buat `ProductController`
+   ![gambar3](./gambar/gambar3.png)
 
-   ```php
-   <?php
-   namespace App\ViewModels;
+   dan tambah method `create` & `result`.  
+   ![gambar3](./gambar/gambar3.1.png)
 
-   class ProductViewModel
-   {
-       public string $name;
-       public float $price;
-       public string $description;
+4. Daftarkan route di `routes/web.php` untuk form & result.  
+   ![gambar4](./gambar/gambar4.png)
 
-       public function __construct(string $name = '', float $price = 0, string $description = '')
-       {
-           $this->name = $name;
-           $this->price = $price;
-           $this->description = $description;
-       }
+5. Buat view form `resources/views/product/create.blade.php`.  
+   ![gambar5](./gambar/gambar5.png)
 
-       public static function fromRequest(array $data): self
-       {
-           return new self(
-               $data['name'] ?? '',
-               (float)($data['price'] ?? 0),
-               $data['description'] ?? ''
-           );
-       }
-   }
-   ```
+6. Buat view hasil `resources/views/product/result.blade.php`.  
+   ![gambar6](./gambar/gambar6.png)
 
-3. **Buat controller**: `php artisan make:controller ProductController` lalu isi:
+**Hasil Pengujian:**
 
-   ```php
-   namespace App\Http\Controllers;
-
-   use Illuminate\Http\Request;
-   use App\ViewModels\ProductViewModel;
-
-   class ProductController extends Controller
-   {
-       public function create()
-       {
-           return view('product.create');
-       }
-
-       public function result(Request $request)
-       {
-           $product = ProductViewModel::fromRequest($request->all());
-           return view('product.result', compact('product'));
-       }
-   }
-   ```
-
-4. **Daftarkan route** di `routes/web.php`:
-
-   ```php
-   use App\Http\Controllers\ProductController;
-
-   Route::get('/product/create', [ProductController::class, 'create'])->name('product.create');
-   Route::post('/product/result', [ProductController::class, 'result'])->name('product.result');
-   ```
-
-5. **Buat view form**: `resources/views/product/create.blade.php`
-
-   ```html
-   <!DOCTYPE html>
-   <html>
-   <head>
-       <title>Create Product</title>
-       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-   </head>
-   <body class="container py-5">
-       <h2>Create Product (No Database)</h2>
-       <form method="POST" action="{{ route('product.result') }}">
-           @csrf
-           <div class="mb-3">
-               <label class="form-label">Name</label>
-               <input name="name" class="form-control" required>
-           </div>
-           <div class="mb-3">
-               <label class="form-label">Price</label>
-               <input name="price" type="number" step="0.01" class="form-control" required>
-           </div>
-           <div class="mb-3">
-               <label class="form-label">Description</label>
-               <textarea name="description" class="form-control"></textarea>
-           </div>
-           <button type="submit" class="btn btn-primary">Submit Product</button>
-       </form>
-   </body>
-   </html>
-   ```
-
-6. **Buat view hasil**: `resources/views/product/result.blade.php`
-
-   ```html
-   <!DOCTYPE html>
-   <html>
-   <head>
-       <title>Product Result</title>
-       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-   </head>
-   <body class="container py-5">
-       <h2>Submitted Product Details</h2>
-       <ul class="list-group">
-           <li class="list-group-item"><strong>Name:</strong> {{ $product->name }}</li>
-           <li class="list-group-item"><strong>Price:</strong> ${{ number_format($product->price, 2) }}</li>
-           <li class="list-group-item"><strong>Description:</strong> {{ $product->description }}</li>
-       </ul>
-       <a href="{{ route('product.create') }}" class="btn btn-link mt-3">Submit Another Product</a>
-   </body>
-   </html>
-   ```
-
----
+- `/product/create` → menampilkan form input produk.  
+  ![hasil1](./gambar/gambarhasil1.png)
+- Submit → `/product/result` menampilkan data yang dikirim (tanpa penyimpanan DB).  
+  ![hasil1_result](./gambar/gambarhasil2.png)
 
 ### 2.2 Praktikum 2 — Menggunakan DTO dan Service
 
@@ -195,260 +108,126 @@ Pada praktik kedua, alurnya mirip praktikum 1, tetapi datanya tidak langsung dip
 
 **Langkah-langkah:**
 
-1. **Buat folder DTO** dan kelas: `app/DTO/ProductDTO.php`
+1. Buat proyek baru :  
+   ![gambar7](./gambar/gambar7.png)
 
-   ```php
-   <?php
+2. Buat DTO: `app/DTO/ProductDTO.php`.
+   ![gambar8](./gambar/gambar8.png)
+3. Buat service: `app/Services/ProductService.php`.  
+   ![gambar8](./gambar/gambar8.1.png)
+4. Buat `ProductController` Update controller untuk menggunakan DTO dan Service.  
+   ![gambar3](./gambar/gambar9.png)
 
-   namespace App\DTO;
+5. Route dan view dapat tetap seperti praktikum 1, hanya hasil yang diolah oleh service.  
+   ![gambar10](./gambar/gambar10.png)
+   ![gambar10](./gambar/gambar10.1.png)
+   ![gambar10](./gambar/gambar10.2.png)
 
-   class ProductDTO
-   {
-       public string $name;
-       public float $price;
-       public string $description;
+**Hasil Pengujian:**
 
-       public function __construct(string $name, float $price, string $description)
-       {
-           $this->name = $name;
-           $this->price = $price;
-           $this->description = $description;
-       }
-
-       public static function fromRequest(array $data): self
-       {
-           return new self(
-               $data['name'] ?? '',
-               (float)($data['price'] ?? 0),
-               $data['description'] ?? ''
-           );
-       }
-   }
-   ```
-
-2. **Buat service**: `app/Services/ProductService.php`
-
-   ```php
-   <?php
-
-   namespace App\Services;
-
-   use App\DTO\ProductDTO;
-
-   class ProductService
-   {
-       public function display(ProductDTO $product): array
-       {
-           return [
-               'name' => $product->name,
-               'price' => $product->price,
-               'description' => $product->description,
-           ];
-       }
-   }
-   ```
-
-3. **Controller** (boleh pakai `ProductController` yang lain / dipisah):  
-
-   ```php
-   namespace App\Http\Controllers;
-
-   use Illuminate\Http\Request;
-   use App\DTO\ProductDTO;
-   use App\Services\ProductService;
-
-   class ProductController extends Controller
-   {
-       public function create()
-       {
-           return view('product.create');
-       }
-
-       public function result(Request $request)
-       {
-           $dto = ProductDTO::fromRequest($request->all());
-           $service = new ProductService();
-           $product = $service->display($dto);
-
-           return view('product.result', compact('product'));
-       }
-   }
-   ```
-
-4. **Rute** tetap sama:
-
-   ```php
-   Route::get('/product/create', [ProductController::class, 'create'])->name('product.create');
-   Route::post('/product/result', [ProductController::class, 'result'])->name('product.result');
-   ```
-
-5. **View** bisa pakai view dari praktikum 1 (form) dan hasilnya sedikit beda karena yang dikirim array:
-
-   ```html
-   <!-- resources/views/product/result.blade.php -->
-   <!DOCTYPE html>
-   <html>
-   <head>
-       <title>Product Result</title>
-       <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-   </head>
-   <body class="container py-5">
-       <h2>Product DTO Result</h2>
-       <div class="card">
-           <div class="card-header">Product Details</div>
-           <ul class="list-group list-group-flush">
-               <li class="list-group-item"><strong>Name:</strong> {{ $product['name'] }}</li>
-               <li class="list-group-item"><strong>Price:</strong> ${{ number_format($product['price'], 2) }}</li>
-               <li class="list-group-item"><strong>Description:</strong> {{ $product['description'] }}</li>
-           </ul>
-       </div>
-   </body>
-   </html>
-   ```
+- `/product/create` → form sama.  
+  ![hasil2_create](./gambar/gambar2hasil1.png)
+- Submit → hasil ditampilkan menggunakan data dari `ProductService`.  
+  ![hasil2_result](./gambar/gambar2hasil2.png)
 
 ---
 
 ### 2.3 Praktikum 3 — Todo CRUD dengan Eloquent dan MySQL
 
-Bagian ini sudah mulai memakai **model Eloquent beneran** plus **migration + seeder**.
+Bagian ini sudah mulai memakai **model Eloquent** plus **migration + seeder**.
 
 **Langkah-langkah utama:**
 
-1. **Buat project**
+1. Buat project baru :  
+   ![gambar11](./gambar/gambar11.png)
 
-   ```bash
-   laravel new todo-app-mysql
-   cd todo-app-mysql
+   kemudian Install dependency MySQL:
+   ```bash 
+   composer require doctrine/dbal
    ```
+   Tak lupa juga membuat database tododb
 
-2. **Set database MySQL** di file `.env`:
+2. Atur database di `.env`.  
+   ![gambar12](./gambar/gambar12.png)
 
-   ```env
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=tododb
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
-
-3. **Buat migration** untuk tabel `todos`:
-
+3. Buat migration `create_todos_table` 
    ```bash
    php artisan make:migration create_todos_table
    ```
+   Lalu isi file yang dihasilkan di database/migrations/YYYY_MM_DD_create_todos_table.php dan perbarui
+   ![gambar13](./gambar/gambar13.png)
 
-   Lalu isi:
-
-   ```php
-   Schema::create('todos', function (Blueprint $table) {
-       $table->id();
-       $table->string('task');
-       $table->boolean('completed')->default(false);
-       $table->timestamps();
-   });
-   ```
-
-   Jalankan:
-
+   lalu jalankan 
    ```bash
    php artisan migrate
    ```
-
-4. **Buat seeder** untuk data awal:
-
+4. Buat seeder `TodoSeeder` Jalankan perintah ini untuk membuat seeder: 
    ```bash
    php artisan make:seeder TodoSeeder
    ```
+   Buka file yang dihasilkan di database/seeders/TodoSeeder.php dan perbarui:
+   ![gambar14](./gambar/gambar14.png)
 
-   Isi dengan 3 data dummy, lalu jalankan:
-
+   Lalu jalankan seeder  
    ```bash
    php artisan db:seed --class=TodoSeeder
    ```
 
-5. **Buat model Eloquent**
-
+5. Buat model `Todo` 
    ```bash
    php artisan make:model Todo
    ```
+   Buka file yang dihasilkan di app/Models/Todo.php dan perbarui:
+   ![gambar15](./gambar/gambar15.png)
 
-   dan isi:
+6. Buat `TodoController`     
+   ![gambar16](./gambar/gambar16.png)
 
-   ```php
-   class Todo extends Model
-   {
-       protected $fillable = ['task', 'completed'];
-   }
-   ```
+   Dan tambhakan controller tersebut ke route
+   ![gambar16](./gambar/gambar16.1.png)
 
-6. **Buat controller CRUD**
+7. Buat Layout lewat file `app.blade.php` di folder layout
+   ![gambarlayout](./gambar/gambarlayout.png)
 
-   ```bash
-   php artisan make:controller TodoController
-   ```
+   Kemudian buat view di `resources/views/todos/*` (index, create, edit, show).  
+   
+   index
+   ![gambar17](./gambar/gambar17.png)
 
-   lalu isi method: `index`, `create`, `store`, `show`, `edit`, `update`, `destroy` seperti di modul.
+   create
+   ![gambar17](./gambar/gambar17.1.png)
 
-7. **Definisikan route** di `routes/web.php`:
+   edit
+   ![gambar17](./gambar/gambar17.2.png)
 
-   ```php
-   use App\Http\Controllers\TodoController;
+   show
+   ![gambar17](./gambar/gambar17.3.png)
 
-   Route::get('/', [TodoController::class, 'index'])->name('todos.index');
-   Route::get('/todos/create', [TodoController::class, 'create'])->name('todos.create');
-   Route::post('/todos', [TodoController::class, 'store'])->name('todos.store');
-   Route::get('/todos/{todo}', [TodoController::class, 'show'])->name('todos.show');
-   Route::get('/todos/{todo}/edit', [TodoController::class, 'edit'])->name('todos.edit');
-   Route::patch('/todos/{todo}', [TodoController::class, 'update'])->name('todos.update');
-   Route::delete('/todos/{todo}', [TodoController::class, 'destroy'])->name('todos.destroy');
+**Hasil Pengujian:**
 
-   // Route bawaan dikomentari agar tidak bentrok
-   // Route::get('/', function () { return view('welcome'); });
-   ```
-
-8. **Buat layout dan view** di `resources/views/layouts/app.blade.php` dan folder `resources/views/todos/` (index, create, edit, show) dengan Bootstrap seperti di modul.
-
----
+- `/` → menampilkan daftar todo dari database.  
+  ![hasil3_index](./gambar/gambar3hasil1.png)
+- `/todos/create` → form tambah task, submit menyimpan ke DB.  
+  ![hasil3_create](./gambar/gambar3hasil2.png)
+- Edit / Delete bekerja sesuai ekspektasi.  
+  ![hasil3_edit](./gambar/gambar3hasil3.png)
 
 ## 3. Hasil dan Pembahasan
 
-### Hasil Pengujian:
+1. **Praktikum 1 (tanpa database)** memperkenalkan konsep model sebagai _data holder_ sederhana. `ProductViewModel` membantu memahami bahwa model tidak selalu harus terhubung ke tabel database — fungsinya bisa sekadar menampung data yang dikirim dari form.
 
-**Praktikum 1 – Binding Form ke Model Sederhana**  
-- `http://127.0.0.1:8000/product/create` → menampilkan halaman **form input produk** berisi kolom *Name*, *Price*, dan *Description*.  
-- Saat form disubmit ke `POST http://127.0.0.1:8000/product/result` → muncul halaman hasil yang menampilkan **Name**, **Price**, dan **Description** sesuai data yang dimasukkan.  
-- Tidak ada penyimpanan ke database; data hanya dikirim melalui controller dan ditampilkan kembali ke view.
+2. **Praktikum 2 (DTO dan Service)** memperlihatkan penerapan pola _clean architecture_ di Laravel. Dengan memisahkan data ke `ProductDTO` dan logika ke `ProductService`, controller jadi lebih ringkas, mudah diuji, dan mudah dikembangkan jika nanti logikanya bertambah.
 
-**Praktikum 2 – Menggunakan DTO dan Service**  
-- `http://127.0.0.1:8000/product/create` → menampilkan form input produk sama seperti sebelumnya.  
-- Setelah disubmit ke `POST /product/result`, data form diproses oleh **ProductDTO** dan diteruskan ke **ProductService** untuk diolah.  
-- Hasil akhirnya ditampilkan pada halaman **Product DTO Result** dalam bentuk *Bootstrap card* berisi nama, harga, dan deskripsi produk.
+3. **Praktikum 3 (CRUD Eloquent dan MySQL)** adalah penerapan konsep _Model_ yang sesungguhnya di Laravel. Semua operasi database seperti tambah, ubah, hapus, dan tampil dilakukan lewat Eloquent ORM, tanpa perlu menulis query SQL secara manual.
 
-**Praktikum 3 – Todo CRUD dengan Eloquent dan MySQL**  
-- `http://127.0.0.1:8000/` → menampilkan **daftar todo** dari tabel `todos` di database MySQL.  
-- `http://127.0.0.1:8000/todos/create` → menampilkan **form tambah task**. Setelah disubmit, data tersimpan ke database melalui **Model Eloquent Todo** dan muncul pesan “Task added successfully!”.  
-- `http://127.0.0.1:8000/todos/{id}` → menampilkan **detail salah satu task**.  
-- `http://127.0.0.1:8000/todos/{id}/edit` → menampilkan **form edit task** untuk memperbarui data, setelah disimpan muncul pesan sukses.  
-- Tombol **Hapus** pada daftar todo → menghapus data dari database dengan metode `DELETE`, dan data langsung hilang dari daftar.
-
----
-
-### Penjelasan Umum
-
-1. **Praktikum 1 (tanpa database)** memperkenalkan konsep model sebagai *data holder* sederhana. `ProductViewModel` membantu memahami bahwa model tidak selalu harus terhubung ke tabel database — fungsinya bisa sekadar menampung data yang dikirim dari form.  
-
-2. **Praktikum 2 (DTO dan Service)** memperlihatkan penerapan pola *clean architecture* di Laravel. Dengan memisahkan data ke `ProductDTO` dan logika ke `ProductService`, controller jadi lebih ringkas, mudah diuji, dan mudah dikembangkan jika nanti logikanya bertambah.  
-
-3. **Praktikum 3 (CRUD Eloquent dan MySQL)** adalah penerapan konsep *Model* yang sesungguhnya di Laravel. Semua operasi database seperti tambah, ubah, hapus, dan tampil dilakukan lewat Eloquent ORM, tanpa perlu menulis query SQL secara manual.  
-
-4. Secara keseluruhan, dari ketiga praktikum ini mahasiswa dapat melihat transisi yang jelas dari model sederhana tanpa database, ke model dengan arsitektur DTO–Service, hingga ke model penuh dengan Eloquent ORM yang terhubung langsung ke database MySQL. Hal ini memperkuat pemahaman konsep MVC Laravel dari sisi Model secara menyeluruh.  
+4. Secara keseluruhan, dari ketiga praktikum ini mahasiswa dapat melihat transisi yang jelas dari model sederhana tanpa database, ke model dengan arsitektur DTO–Service, hingga ke model penuh dengan Eloquent ORM yang terhubung langsung ke database MySQL. Hal ini memperkuat pemahaman konsep MVC Laravel dari sisi Model secara menyeluruh.
 
 ---
 
 ## 4. Kesimpulan
 
 Dari praktikum Modul 6 ini dapat disimpulkan bahwa:
+
 1. **Model di Laravel tidak selalu berarti Eloquent** — kita bisa mulai dari kelas PHP biasa (ViewModel/POCO) untuk menampung data form.
 2. **DTO membantu merapikan alur data** dari request ke lapisan lain sehingga controller lebih bersih dan mudah diuji.
 3. **Eloquent ORM mempermudah CRUD** karena kita cukup memanggil method bawaan tanpa menulis SQL manual.
@@ -459,6 +238,7 @@ Dari praktikum Modul 6 ini dapat disimpulkan bahwa:
 
 ## 5. Referensi
 
-- Dokumentasi Resmi Laravel 12 — *Eloquent ORM, Migrations, Database*  
-- Modul 6 - Model dan Laravel Eloquent — (HackMD, Muhammad Reza Zulman)  
-- Laravel Docs: Validation, Controllers, Responses — https://laravel.com/docs
+- Modul 6 - Model dan Laravel Eloquent — (https://hackmd.io/@mohdrzu/ryIIM1a0ll)
+- Dokumentasi Resmi Laravel 12 — (https://laravel.com/docs/12.x/eloquent)
+
+

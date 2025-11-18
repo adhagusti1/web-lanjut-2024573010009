@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 
 class RegisterController extends Controller
@@ -10,7 +8,6 @@ class RegisterController extends Controller
     {
         return view('register');
     }
-
     public function handleForm(Request $request)
     {
         $customMessages = [
@@ -32,3 +29,4 @@ class RegisterController extends Controller
         return redirect()->route('register.show')->with('success', 'Registrasi berhasil!');
     }
 }
+
